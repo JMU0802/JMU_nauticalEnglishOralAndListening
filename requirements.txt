@@ -1,0 +1,30 @@
+# ── 核心运行依赖 ──────────────────────────────────────────────────
+
+# UI 框架
+PyQt6>=6.7.0
+
+# ASR：语音识别
+faster-whisper>=1.0.3
+
+# TTS：语音合成
+TTS>=0.22.0
+
+# NLP：句子匹配
+sentence-transformers>=3.0.0
+
+# 评分：词错误率
+jiwer>=3.0.0
+
+# 音频 I/O
+sounddevice>=0.4.6
+soundfile>=0.12.1
+
+# 数据库 ORM
+SQLAlchemy>=2.0.0
+
+# 数值计算
+numpy>=1.26.0
+
+# ── 可选加速（有 NVIDIA GPU 时取消注释）──────────────────────────
+# nvidia-cublas-cu12
+# nvidia-cudnn-cu12

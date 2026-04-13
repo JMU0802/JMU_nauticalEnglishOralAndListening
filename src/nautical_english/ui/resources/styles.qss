@@ -1,0 +1,129 @@
+/* ================================================================
+   Maritime English Trainer — Ocean Blue Theme
+   作用于全局 QSS 样式
+   ================================================================ */
+
+/* ── 全局背景 ────────────────────────────────────────────────── */
+QMainWindow,
+QWidget#centralWidget {
+    background-color: #0A1628;
+    color: #ECF0F1;
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+/* ── 标签页 ────────────────────────────────────────────────── */
+QTabWidget::pane {
+    border: 1px solid #1E3A5F;
+    background-color: #0D1F3C;
+}
+QTabBar::tab {
+    background-color: #1E3A5F;
+    color: #BDC3C7;
+    padding: 8px 20px;
+    border-radius: 4px 4px 0 0;
+}
+QTabBar::tab:selected {
+    background-color: #2980B9;
+    color: #FFFFFF;
+    font-weight: bold;
+}
+
+/* ── 录音按钮（圆形大红按钮）────────────────────────────────── */
+QPushButton#recordBtn {
+    background-color: #E74C3C;
+    border-radius: 40px;
+    color: #FFFFFF;
+    font-size: 14px;
+    font-weight: bold;
+    min-width: 80px;
+    min-height: 80px;
+    border: none;
+}
+QPushButton#recordBtn:hover {
+    background-color: #C0392B;
+}
+QPushButton#recordBtn:pressed {
+    background-color: #962D22;
+}
+QPushButton#recordBtn:disabled {
+    background-color: #7F8C8D;
+}
+
+/* ── 普通按钮 ────────────────────────────────────────────────── */
+QPushButton {
+    background-color: #2980B9;
+    color: #FFFFFF;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-size: 13px;
+    border: none;
+}
+QPushButton:hover  { background-color: #3498DB; }
+QPushButton:pressed{ background-color: #1A6A9A; }
+
+/* ── 评分大字 ─────────────────────────────────────────────── */
+QLabel#scoreLabel {
+    color: #F39C12;
+    font-size: 56px;
+    font-weight: bold;
+}
+
+/* ── 等级标签 ─────────────────────────────────────────────── */
+QLabel#gradeLabel {
+    color: #2ECC71;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* ── 短语展示区 ───────────────────────────────────────────── */
+QLabel#phraseLabel {
+    color: #ECF0F1;
+    font-size: 26px;
+    font-weight: bold;
+    padding: 12px;
+    background-color: #1E3A5F;
+    border-radius: 8px;
+}
+QLabel#phraseLabelZh {
+    color: #95A5A6;
+    font-size: 15px;
+    padding: 4px 12px;
+}
+
+/* ── 文本框 ──────────────────────────────────────────────── */
+QTextEdit, QLineEdit {
+    background-color: #152232;
+    color: #ECF0F1;
+    border: 1px solid #2C3E50;
+    border-radius: 4px;
+    padding: 6px;
+    font-size: 13px;
+}
+
+/* ── 表格视图（管理端）────────────────────────────────────── */
+QTableView {
+    background-color: #0D1F3C;
+    color: #ECF0F1;
+    gridline-color: #1E3A5F;
+    selection-background-color: #2980B9;
+    border: 1px solid #1E3A5F;
+}
+QHeaderView::section {
+    background-color: #1E3A5F;
+    color: #ECF0F1;
+    padding: 6px;
+    border: none;
+    font-weight: bold;
+}
+
+/* ── 滚动条 ──────────────────────────────────────────────── */
+QScrollBar:vertical {
+    background-color: #0D1F3C;
+    width: 10px;
+    border-radius: 5px;
+}
+QScrollBar::handle:vertical {
+    background-color: #2980B9;
+    border-radius: 5px;
+    min-height: 20px;
+}

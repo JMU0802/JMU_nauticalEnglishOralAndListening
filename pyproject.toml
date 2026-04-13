@@ -1,0 +1,41 @@
+[project]
+name = "nautical-english-trainer"
+version = "0.1.0"
+description = "Offline Maritime English Oral & Listening Training System"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+keywords = ["maritime", "english", "ASR", "TTS", "education", "PyQt6"]
+
+[project.scripts]
+nautical-trainer = "nautical_english.main:main"
+
+[build-system]
+requires = ["setuptools>=70.0", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.coverage.run]
+source = ["nautical_english"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+fail_under = 70
