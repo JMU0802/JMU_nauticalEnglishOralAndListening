@@ -41,10 +41,19 @@ class WhisperRecognizer:
         # 延迟导入，避免在单元测试中强制加载大模型
         from faster_whisper import WhisperModel  # noqa: PLC0415
 
+        # 优先使用本地直接路径（models/whisper/<size>/model.bin）
+        local_path = Path(model_dir) / model_size if model_dir else None
+        if local_path and (local_path / "model.bin").exists():
+            model_arg: str | Path = local_path
+            download_root = None
+        else:
+            model_arg = model_size
+            download_root = str(model_dir) if model_dir else None
+
         self._model: _WhisperModel = WhisperModel(
-            model_size,
+            str(model_arg),
             device=device,
-            download_root=str(model_dir) if model_dir else None,
+            download_root=download_root,
         )
 
     def transcribe(self, audio: np.ndarray | str | Path) -> str:
