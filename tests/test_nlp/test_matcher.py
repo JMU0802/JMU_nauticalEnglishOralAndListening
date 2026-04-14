@@ -17,21 +17,20 @@ _PHRASES = [
 
 def _make_matcher(phrases=None):
     phrases = phrases or _PHRASES
-    with patch("nautical_english.nlp.matcher.SentenceTransformer") as MockST:
-        mock_model = MagicMock()
-        # 构造简单的伪嵌入（每个短语一个不同方向的单位向量）
-        n = len(phrases)
-        fake_embs = np.eye(n, dtype=np.float32)
-        mock_model.encode.return_value = fake_embs
-        MockST.return_value = mock_model
+    from nautical_english.nlp.matcher import SentenceMatcher
 
-        from nautical_english.nlp.matcher import SentenceMatcher
+    mock_model = MagicMock()
+    # 构造简单的伪嵌入（每个短语一个不同方向的单位向量）
+    n = len(phrases)
+    fake_embs = np.eye(n, dtype=np.float32)
+    mock_model.encode.return_value = fake_embs
 
-        m = SentenceMatcher.__new__(SentenceMatcher)
-        m._model = mock_model
-        m._phrases = phrases
-        m._embeddings = fake_embs
-        return m
+    m = SentenceMatcher.__new__(SentenceMatcher)
+    m._model = mock_model
+    m._phrases = phrases
+    m._embeddings = fake_embs
+    m._cache = {}
+    return m
 
 
 def test_find_best_match_returns_match_result():
