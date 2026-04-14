@@ -30,6 +30,9 @@ class AppConfig:
 
     # ── NLP / 匹配配置 ────────────────────────────────────────────
     sbert_model_name: str = "paraphrase-multilingual-MiniLM-L12-v2"
+    sbert_model_dir: Path = field(
+        default_factory=lambda: MODELS_DIR / "sbert"
+    )
 
     # ── 数据库 ────────────────────────────────────────────────────
     db_path: Path = field(
