@@ -35,10 +35,11 @@ class SentenceMatcher:
         phrases: list[str],
         model_name: str = _DEFAULT_MODEL,
         cache_folder: str | None = None,
+        device: str = "auto",
     ) -> None:
         from sentence_transformers import SentenceTransformer  # noqa: PLC0415
 
-        self._model = SentenceTransformer(model_name, cache_folder=cache_folder, device="cpu")
+        self._model = SentenceTransformer(model_name, cache_folder=cache_folder, device=device)
         self._phrases = phrases
         # 预计算语料库向量（normalize 后可直接用点积代替余弦）
         self._embeddings: np.ndarray = self._model.encode(
