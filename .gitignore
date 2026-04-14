@@ -10,6 +10,11 @@ dist/
 build/
 *.egg
 
+# ── 环境变量 / API Keys（切勿提交）────────────────────────────────
+.env
+.env.*
+!.env.example
+
 # ── 虚拟环境 ──────────────────────────────────────────────────────
 .venv/
 venv/
@@ -19,9 +24,17 @@ ENV/
 # ── AI 模型（体积巨大，不纳入 git）──────────────────────────────
 models/whisper/
 models/tts/
+models/sbert/
 # 仅保留 .gitkeep
 !models/whisper/.gitkeep
 !models/tts/.gitkeep
+!models/sbert/.gitkeep
+
+# ── 原始音频数据包（> 100 MB，不纳入 git）─────────────────────
+SMCP_DATA/audioFile/*.rar
+SMCP_DATA/audioFile/*.zip
+# 大型 PDF 参考文档（> 10 MB）
+SMCP_DATA/docs/3317.-Maritime-English-for-the-Merchant-Marine-Academy-Grecia.pdf
 
 # ── 数据库文件 ─────────────────────────────────────────────────────
 corpus/db/*.db

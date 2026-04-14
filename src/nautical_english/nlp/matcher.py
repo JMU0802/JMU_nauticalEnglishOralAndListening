@@ -38,26 +38,42 @@ class SentenceMatcher:
         device: str = "auto",
     ) -> None:
         from sentence_transformers import SentenceTransformer  # noqa: PLC0415
+        import torch  # noqa: PLC0415
 
-        self._model = SentenceTransformer(model_name, cache_folder=cache_folder, device=device)
+        if device == "auto":
+            resolved_device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:
+            resolved_device = device
+
+        self._model = SentenceTransformer(
+            model_name,
+            cache_folder=cache_folder,
+            device=resolved_device,
+        )
         self._phrases = phrases
         # 预计算语料库向量（normalize 后可直接用点积代替余弦）
         self._embeddings: np.ndarray = self._model.encode(
             phrases, normalize_embeddings=True, show_progress_bar=False
         )
+        self._cache: dict[str, MatchResult] = {}
 
     def find_best_match(self, query: str) -> MatchResult:
         """在候选短语中找到与 ``query`` 最接近的标准句。"""
-        q_emb = self._model.encode(
-            [query], normalize_embeddings=True, show_progress_bar=False
-        )
+        normalized = query.strip().lower()
+        cached = self._cache.get(normalized)
+        if cached is not None:
+            return cached
+
+        q_emb = self._model.encode([normalized], normalize_embeddings=True, show_progress_bar=False)
         scores = (self._embeddings @ q_emb.T).flatten()
         idx = int(np.argmax(scores))
-        return MatchResult(
+        result = MatchResult(
             phrase=self._phrases[idx],
             score=float(scores[idx]),
             index=idx,
         )
+        self._cache[normalized] = result
+        return result
 
     def update_phrases(self, phrases: list[str]) -> None:
         """更新候选短语库并重新编码（语料变更时调用）。"""
@@ -65,3 +81,4 @@ class SentenceMatcher:
         self._embeddings = self._model.encode(
             phrases, normalize_embeddings=True, show_progress_bar=False
         )
+        self._cache.clear()

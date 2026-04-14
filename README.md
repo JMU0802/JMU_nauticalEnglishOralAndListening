@@ -115,3 +115,23 @@ pytest tests/ --cov=src/nautical_english --cov-report=html
 - [Coqui TTS](https://github.com/coqui-ai/TTS)
 - [Sentence Transformers](https://www.sbert.net)
 - [PyQt6 Documentation](https://doc.qt.io/qtforpython-6/)
+
+---
+
+## 🔑 LLM 配置
+
+在项目根目录创建 `.env` 文件（已被 `.gitignore` 忽略，不会提交到 git）：
+
+```env
+# 选择 LLM 提供商: deepseek | kimi | zai
+LLM_PROVIDER=zai
+
+# Z.ai (ZhipuAI GLM) API Key
+ZAI_API_KEY=<your-key-here>
+
+# 可选
+# DEEPSEEK_API_KEY=
+# KIMI_API_KEY=
+# LLM_TIMEOUT=30
+# LLM_MAX_TOKENS=512
+```

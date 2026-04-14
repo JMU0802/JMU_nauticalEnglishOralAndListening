@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import numpy as np
 
@@ -50,3 +50,15 @@ def test_match_result_index_in_range():
     matcher._model.encode.return_value = np.array([[0, 1, 0, 0]], dtype=np.float32)
     result = matcher.find_best_match("stay away from me")
     assert 0 <= result.index < len(_PHRASES)
+
+
+def test_find_best_match_uses_cache_for_same_query():
+    matcher = _make_matcher()
+    matcher._model.encode.return_value = np.array([[1, 0, 0, 0]], dtype=np.float32)
+
+    first = matcher.find_best_match("Alter course right")
+    second = matcher.find_best_match(" alter course right ")
+
+    assert first is second
+    # 1 次用于 query 编码，后续命中缓存不再编码 query。
+    assert matcher._model.encode.call_count == 1

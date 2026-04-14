@@ -128,6 +128,109 @@ class CorpusRepository:
                 .all()
             )
 
+    def get_all_records(self, limit: int = 500) -> list[TrainingRecord]:
+        """返回所有学生的训练记录（管理端仪表盘使用）。"""
+        with self._Session() as session:
+            return (
+                session.query(TrainingRecord)
+                .order_by(TrainingRecord.created_at.desc())
+                .limit(limit)
+                .all()
+            )
+
+    def get_all_student_ids(self) -> list[str]:
+        """返回有过训练记录的所有学生 ID。"""
+        with self._Session() as session:
+            rows = (
+                session.query(TrainingRecord.student_id)
+                .distinct()
+                .all()
+            )
+            return [r[0] for r in rows]
+
+    def get_phrase_stats(self) -> list[dict]:
+        """返回每条短语的练习次数和平均分。
+
+        Returns
+        -------
+        list of dict with keys: phrase_id, phrase_en, count, avg_score
+        """
+        with self._Session() as session:
+            results = (
+                session.query(
+                    TrainingRecord.phrase_id,
+                    Phrase.phrase_en,
+                )
+                .join(Phrase, TrainingRecord.phrase_id == Phrase.id)
+                .all()
+            )
+            # 汇总统计
+            from collections import defaultdict
+            agg: dict[int, dict] = defaultdict(lambda: {"phrase_en": "", "scores": []})
+            for phrase_id, phrase_en in results:
+                agg[phrase_id]["phrase_en"] = phrase_en
+            # 重新查带分数的
+            rows = (
+                session.query(
+                    TrainingRecord.phrase_id,
+                    Phrase.phrase_en,
+                    TrainingRecord.overall_score,
+                )
+                .join(Phrase, TrainingRecord.phrase_id == Phrase.id)
+                .all()
+            )
+            agg2: dict[int, dict] = defaultdict(lambda: {"phrase_en": "", "scores": []})
+            for phrase_id, phrase_en, score in rows:
+                agg2[phrase_id]["phrase_en"] = phrase_en
+                agg2[phrase_id]["scores"].append(score)
+
+            stats = []
+            for pid, data in sorted(agg2.items()):
+                scores = data["scores"]
+                stats.append({
+                    "phrase_id":  pid,
+                    "phrase_en":  data["phrase_en"],
+                    "count":      len(scores),
+                    "avg_score":  sum(scores) / len(scores) if scores else 0.0,
+                })
+            return stats
+
+    def update_phrase(
+        self,
+        phrase_id: int,
+        *,
+        phrase_en: str | None = None,
+        phrase_zh: str | None = None,
+        category_id: int | None = None,
+        difficulty: int | None = None,
+        phonetic: str | None = None,
+    ) -> bool:
+        """更新短语字段，返回 True 表示成功，False 表示短语不存在。"""
+        with self._Session() as session:
+            p = session.get(Phrase, phrase_id)
+            if p is None:
+                return False
+            if phrase_en is not None:
+                p.phrase_en = phrase_en
+            if phrase_zh is not None:
+                p.phrase_zh = phrase_zh
+            if category_id is not None:
+                p.category_id = category_id
+            if difficulty is not None:
+                p.difficulty = difficulty
+            if phonetic is not None:
+                p.phonetic = phonetic
+            session.commit()
+            return True
+
+    def add_category(self, name_en: str, name_zh: str, description: str = "") -> int:
+        """新增类别，返回新类别 id。"""
+        with self._Session() as session:
+            cat = Category(name_en=name_en, name_zh=name_zh, description=description)
+            session.add(cat)
+            session.commit()
+            return cat.id
+
     # ── 内部方法 ─────────────────────────────────────────────────
 
     def _seed_minimal(self) -> None:

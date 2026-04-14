@@ -100,6 +100,18 @@ QTextEdit, QLineEdit {
     font-size: 13px;
 }
 
+QComboBox, QListWidget {
+    background-color: #152232;
+    color: #ECF0F1;
+    border: 1px solid #2C3E50;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+QLabel {
+    color: #D9E2EC;
+}
+
 /* ── 表格视图（管理端）────────────────────────────────────── */
 QTableView {
     background-color: #0D1F3C;
@@ -126,4 +138,56 @@ QScrollBar::handle:vertical {
     background-color: #2980B9;
     border-radius: 5px;
     min-height: 20px;
+}
+
+/* ── QGroupBox（管理端分组）────────────────────────────────── */
+QGroupBox {
+    background-color: #0D1F3C;
+    border: 1px solid #1E3A5F;
+    border-radius: 6px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #BDC3C7;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 4px;
+    color: #3498DB;
+    font-weight: bold;
+}
+
+/* ── 对话框 ──────────────────────────────────────────────── */
+QDialog {
+    background-color: #0D1F3C;
+    color: #ECF0F1;
+}
+QDialogButtonBox QPushButton {
+    min-width: 80px;
+}
+
+/* ── QSpinBox ────────────────────────────────────────────── */
+QSpinBox {
+    background-color: #152232;
+    color: #ECF0F1;
+    border: 1px solid #2C3E50;
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+QSpinBox::up-button, QSpinBox::down-button {
+    background-color: #1E3A5F;
+    border: none;
+}
+
+/* ── 播放标准发音按钮 ─────────────────────────────────────── */
+QPushButton#playBtn {
+    background-color: #27AE60;
+    border-radius: 6px;
+}
+QPushButton#playBtn:hover {
+    background-color: #2ECC71;
+}
+QPushButton#playBtn:disabled {
+    background-color: #2C3E50;
+    color: #7F8C8D;
 }
