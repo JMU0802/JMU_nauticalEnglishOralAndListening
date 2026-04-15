@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 
@@ -16,7 +17,7 @@ class MatchResult:
     index: int            # 在候选列表中的下标
 
 
-_DEFAULT_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
+_DEFAULT_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 
 class SentenceMatcher:
@@ -45,8 +46,19 @@ class SentenceMatcher:
         else:
             resolved_device = device
 
+        # 优先使用项目内本地模型，完全跳过 HuggingFace 网络请求（加快启动 15-20 秒）
+        # 路径: models/sbert/<hub_slug>/snapshots/<commit>/
+        resolved_model: str = model_name
+        _local_hub = Path(__file__).resolve().parents[3] / "models" / "sbert"
+        _slug = "models--" + model_name.replace("/", "--")
+        _snap_dir = _local_hub / _slug / "snapshots"
+        if _snap_dir.is_dir():
+            _snaps = sorted(_snap_dir.iterdir())
+            if _snaps and (_snaps[-1] / "config.json").exists():
+                resolved_model = str(_snaps[-1])
+        
         self._model = SentenceTransformer(
-            model_name,
+            resolved_model,
             cache_folder=cache_folder,
             device=resolved_device,
         )

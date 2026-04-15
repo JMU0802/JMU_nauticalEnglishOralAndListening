@@ -96,3 +96,39 @@ def parse_llm_output(raw: str) -> ParsedLLMOutput:
     judge = judge_match.group(1).strip() if judge_match else ""
 
     return ParsedLLMOutput(reply=reply, judge=judge)
+
+
+# ---------------------------------------------------------------------------
+# RAG context injection
+# ---------------------------------------------------------------------------
+
+_RAG_INJECT_TEMPLATE = """\
+[SMCP_REFERENCE]
+以下是来自SMCP知识库的相关标准用语，供你在评估时参考：
+{rag_context}
+[/SMCP_REFERENCE]
+
+{student_text}"""
+
+
+def inject_rag_context(student_text: str, rag_context: str) -> str:
+    """将 RAG 检索到的 SMCP 标准知识注入到学员发言中。
+
+    Parameters
+    ----------
+    student_text:
+        学员原始发言内容。
+    rag_context:
+        LightRAG 返回的相关 SMCP 标准知识文本。
+
+    Returns
+    -------
+    str
+        注入了知识上下文的增强消息体，当 rag_context 为空时直接返回原文。
+    """
+    if not rag_context or not rag_context.strip():
+        return student_text
+    return _RAG_INJECT_TEMPLATE.format(
+        rag_context=rag_context.strip(),
+        student_text=student_text,
+    )

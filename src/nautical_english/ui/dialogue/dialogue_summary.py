@@ -7,7 +7,9 @@ to replay the same scenario.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from typing import TYPE_CHECKING
+
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -17,10 +19,13 @@ from PyQt6.QtWidgets import (
     QScrollArea,
     QTableWidget,
     QTableWidgetItem,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
+if TYPE_CHECKING:
+    from nautical_english.coach.service import CoachService
 from nautical_english.scenario.models import DialogueTurn
 from nautical_english.scenario.repository import ScenarioRepository
 
@@ -44,7 +49,11 @@ class DialogueSummaryView(QWidget):
     # Public
     # ------------------------------------------------------------------
 
-    def load_session(self, session_id: str) -> None:
+    def load_session(
+        self,
+        session_id: str,
+        coach: "CoachService | None" = None,
+    ) -> None:
         """Populate the view with results for *session_id*."""
         turns = self._repo.get_session_turns(session_id)
         if not turns:
@@ -80,6 +89,20 @@ class DialogueSummaryView(QWidget):
 
         self._table.resizeRowsToContents()
         self._retry_scenario_id = scenario_id
+
+        # Trigger AI evaluation if coach service provided
+        self._eval_text.setPlainText("⌛ AI 正在生成综合评估，请稍候…")
+        if coach is not None:
+            coach.evaluate_session(
+                on_complete=lambda text: QTimer.singleShot(
+                    0, lambda: self._set_evaluation(text)
+                ),
+                on_error=lambda msg: QTimer.singleShot(
+                    0, lambda: self._set_evaluation(f"⚠️ 评估生成失败：{msg}")
+                ),
+            )
+        else:
+            self._eval_text.setPlainText("（无法生成评估：教练服务不可用）")
 
     # ------------------------------------------------------------------
     # UI build
@@ -123,6 +146,26 @@ class DialogueSummaryView(QWidget):
         self._table.setWordWrap(True)
         root.addWidget(self._table)
 
+        # AI evaluation area
+        eval_sep = QFrame()
+        eval_sep.setFrameShape(QFrame.Shape.HLine)
+        eval_sep.setStyleSheet("color: #2C3E50;")
+        root.addWidget(eval_sep)
+
+        eval_title = QLabel("🤖 AI 综合评估")
+        eval_title.setObjectName("cardSubtitle")
+        root.addWidget(eval_title)
+
+        self._eval_text = QTextEdit()
+        self._eval_text.setReadOnly(True)
+        self._eval_text.setMinimumHeight(150)
+        self._eval_text.setStyleSheet(
+            "QTextEdit { background: #1A2332; color: #D0E8FF; "
+            "border: 1px solid #2C3E50; border-radius: 6px; padding: 8px; "
+            "font-size: 13px; }"
+        )
+        root.addWidget(self._eval_text)
+
         # Buttons
         btn_row = QHBoxLayout()
         btn_row.addStretch()
@@ -153,6 +196,9 @@ class DialogueSummaryView(QWidget):
         if score >= 60:
             return "及格 B"
         return "待提高 C"
+
+    def _set_evaluation(self, text: str) -> None:
+        self._eval_text.setPlainText(text)
 
     def _set_cell(self, row: int, col: int, text: str) -> None:
         item = QTableWidgetItem(text or "")

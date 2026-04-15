@@ -14,6 +14,8 @@ from PyQt6.QtWidgets import QStackedWidget, QVBoxLayout, QWidget
 
 from nautical_english.coach.service import CoachService
 from nautical_english.llm import get_provider
+from nautical_english.rag.client import RAGClient
+from nautical_english.rag.config import RAGConfig
 from nautical_english.scenario.repository import ScenarioRepository
 from nautical_english.ui.dialogue.dialogue_summary import DialogueSummaryView
 from nautical_english.ui.dialogue.dialogue_view import DialogueView
@@ -102,9 +104,21 @@ class DialogueHub(QWidget):
             )
             return
 
+        # 可选 RAG 增强（LightRAG Server 离线时自动降级）
+        rag_client: RAGClient | None = None
+        try:
+            cfg = RAGConfig()
+            if cfg.enabled:
+                candidate = RAGClient(cfg)
+                if candidate.is_healthy():
+                    rag_client = candidate
+        except Exception:  # noqa: BLE001
+            pass
+
         self._coach = CoachService(
             scenario_repo=self._repo,
             provider=provider,
+            rag_client=rag_client,
         )
 
         # Replace dialogue page widget
@@ -128,5 +142,5 @@ class DialogueHub(QWidget):
         new_view.start(student_id)
 
     def _on_session_ended(self, session_id: str) -> None:
-        self._summary.load_session(session_id)
+        self._summary.load_session(session_id, coach=self._coach)
         self._stack.setCurrentIndex(_PAGE_SUMMARY)

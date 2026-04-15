@@ -1,4 +1,4 @@
-"""DialogueView — main conversation screen for SMCP AI coach dialogue.
+﻿"""DialogueView — main conversation screen for SMCP AI coach dialogue.
 
 Layout:
   ┌──────────────────────────────────────────────────────────┐
@@ -15,7 +15,9 @@ Layout:
 
 from __future__ import annotations
 
+import logging
 import re
+import time
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
@@ -40,6 +42,8 @@ from PyQt6.QtWidgets import (
 
 from nautical_english.coach.service import CoachService, CoachState, TurnResult
 from nautical_english.scenario.models import Scenario
+
+log = logging.getLogger("dialogue")
 
 
 # ---------------------------------------------------------------------------
@@ -172,6 +176,13 @@ class DialogueView(QWidget):
 
     session_ended = pyqtSignal(str)   # session_id
 
+    # Cross-thread signals: background threads emit these; slots run on the main thread.
+    # QTimer.singleShot() from a non-Qt thread attaches the timer to the calling thread
+    # (which has no event loop), so it never fires.  Signals are the correct mechanism.
+    _sig_turn_result  = pyqtSignal(object)   # TurnResult
+    _sig_llm_error    = pyqtSignal(str)      # error message
+    _sig_stream_chunk = pyqtSignal(str)      # accumulated stream text
+
     def __init__(
         self,
         coach_service: CoachService,
@@ -280,6 +291,10 @@ class DialogueView(QWidget):
         self._coach._on_turn_complete = self._on_turn_result
         self._coach._on_error = self._on_llm_error
         self._coach._on_stream_chunk = self._on_raw_chunk
+        # Wire cross-thread signals to main-thread slots
+        self._sig_turn_result.connect(self._apply_turn_result)
+        self._sig_llm_error.connect(self._apply_llm_error)
+        self._sig_stream_chunk.connect(self._apply_stream_chunk)
 
     # ------------------------------------------------------------------
     # Recording
@@ -323,12 +338,16 @@ class DialogueView(QWidget):
         text = ""
         if self._asr is not None:
             try:
+                t0 = time.perf_counter()
+                log.info("[TIMING] ASR start")
                 text = self._asr(self._audio_buffer, self._sr)
+                log.info("[TIMING] ASR done %.2fs  result=%r", time.perf_counter() - t0, text[:60])
             except Exception:  # noqa: BLE001
                 text = ""
         if not text:
             text = "(录音)"
 
+        log.info("[TIMING] student_speak => %r", text[:60])
         self._append_bubble("student", text)
         self._status_lbl.setText("AI 教练思考中…")
         self._set_input_enabled(False)
@@ -337,6 +356,7 @@ class DialogueView(QWidget):
     def _type_instead(self) -> None:
         text, ok = QInputDialog.getText(self, "文字输入", "请输入你的回复（英文）：")
         if ok and text.strip():
+            log.info("[TIMING] student_speak (typed) => %r", text.strip()[:60])
             self._append_bubble("student", text.strip())
             self._status_lbl.setText("AI 教练思考中…")
             self._set_input_enabled(False)
@@ -347,8 +367,8 @@ class DialogueView(QWidget):
     # ------------------------------------------------------------------
 
     def _on_turn_result(self, result: TurnResult) -> None:
-        """Called from background thread — post to main thread via QTimer."""
-        QTimer.singleShot(0, lambda: self._apply_turn_result(result))
+        """Called from background thread — emit signal for main-thread dispatch."""
+        self._sig_turn_result.emit(result)
 
     def _apply_turn_result(self, result: TurnResult) -> None:
         if self._stream_bubble is not None:
@@ -376,48 +396,43 @@ class DialogueView(QWidget):
     # ------------------------------------------------------------------
 
     def _on_raw_chunk(self, accumulated: str) -> None:
-        """Called from background thread on each streaming chunk."""
-        QTimer.singleShot(0, lambda: self._apply_stream_chunk(accumulated))
+        """Called from background thread — emit signal for main-thread dispatch."""
+        self._sig_stream_chunk.emit(accumulated)
 
     def _apply_stream_chunk(self, accumulated: str) -> None:
         """Update (or create) the coach streaming bubble — runs on main thread."""
-        # Extract only the [REPLY] portion for display
         reply_match = re.search(
             r'\[REPLY\](.*?)(?=\[JUDGE\]|$)', accumulated, re.DOTALL | re.IGNORECASE
         )
         display = reply_match.group(1).strip() if reply_match else accumulated.strip()
 
         if self._stream_bubble is None:
-            # Create the bubble on first chunk
             self._stream_bubble = _Bubble("coach", display + " \u258c", parent=self._bubble_container)
             idx = self._bubble_layout.count() - 1  # before stretch
             self._bubble_layout.insertWidget(idx, self._stream_bubble)
         else:
             self._stream_bubble.update_reply(display + " \u258c")
 
-        QTimer.singleShot(
-            50,
-            lambda: self._scroll.verticalScrollBar().setValue(
-                self._scroll.verticalScrollBar().maximum()
-            ),
-        )
+        # Scroll once directly — no nested timer
+        scrollbar = self._scroll.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
 
     def _on_llm_error(self, msg: str) -> None:
-        QTimer.singleShot(
-            0,
-            lambda: (
-                self._status_lbl.setText(""),
-                QMessageBox.warning(self, "LLM 错误", f"AI 教练出错：\n{msg}"),
-                self._set_input_enabled(True),
-            ),
-        )
+        """Called from background thread — emit signal for main-thread dispatch."""
+        self._sig_llm_error.emit(msg)
+
+    def _apply_llm_error(self, msg: str) -> None:
+        """Called on main thread via signal — show error and re-enable input."""
+        self._status_lbl.setText("")
+        QMessageBox.warning(self, "LLM 错误", f"AI 教练出错：\n{msg}")
+        self._set_input_enabled(True)
 
     # ------------------------------------------------------------------
     # Session end
     # ------------------------------------------------------------------
 
     def _end_session(self) -> None:
-        if self._coach.state not in (CoachState.DONE, CoachState.READY):
+        if self._coach.state == CoachState.IDLE:
             return
         self._coach.end_session()
         self.session_ended.emit(self._coach.session_id)

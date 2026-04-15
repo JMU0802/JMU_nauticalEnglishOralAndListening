@@ -6,9 +6,13 @@ Default model: glm-4-plus  (最强通用模型，支持流式输出)
 
 from __future__ import annotations
 
+import logging
+import time
 from typing import Iterator
 
 from nautical_english.llm.provider import BaseLLMProvider, LLMMessage, LLMResponse, LLMUsage
+
+log = logging.getLogger("zai_provider")
 
 
 class ZaiProvider(BaseLLMProvider):
@@ -79,7 +83,12 @@ class ZaiProvider(BaseLLMProvider):
         temperature: float = 0.7,
     ) -> Iterator[str]:
         """Real SSE streaming — yields text chunks as they arrive from the server."""
+        t0 = time.perf_counter()
+        log.info("[TIMING] zai stream_chat start  model=%s  max_tokens=%d  msgs=%d",
+                 self._model, max_tokens, len(messages))
         client = self._make_client()
+        log.info("[TIMING] client created in %.2fs", time.perf_counter() - t0)
+        first = True
         with client.chat.completions.create(
             model=self._model,
             messages=messages,  # type: ignore[arg-type]
@@ -90,4 +99,7 @@ class ZaiProvider(BaseLLMProvider):
             for chunk in stream:
                 delta = chunk.choices[0].delta.content or ""
                 if delta:
+                    if first:
+                        log.info("[TIMING] zai first token %.2fs", time.perf_counter() - t0)
+                        first = False
                     yield delta

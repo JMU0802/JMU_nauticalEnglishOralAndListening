@@ -58,6 +58,11 @@ dist/
 *.swo
 *~
 
+# ── LightRAG 服务目录（源码为子仓库，不纳入本仓库）────────────────
+# 克隆方式：git clone https://github.com/HKUDS/LightRAG.git lightrag
+# 部署文件在项目根目录：local_embedding_server.py, start_lightrag.ps1
+lightrag/
+
 # ── 临时音频文件 ─────────────────────────────────────────────────
 *.wav
 *.mp3

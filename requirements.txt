@@ -15,6 +15,10 @@ sentence-transformers>=3.0.0
 # 评分：词错误率
 jiwer>=3.0.0
 
+# LLM 提供商 SDK
+openai>=1.0.0
+python-dotenv>=1.0.0
+
 # 音频 I/O
 sounddevice>=0.4.6
 soundfile>=0.12.1

@@ -79,9 +79,14 @@ def get_timeout() -> int:
 
 
 def get_max_tokens() -> int:
-    """Maximum tokens in a single LLM response (default 512)."""
+    """Maximum tokens in a single LLM response (default 200).
+
+    SMCP replies are short: [REPLY] ≤60 words + [JUDGE] ≤3 sentences ≈ 150 tokens.
+    200 gives comfortable headroom while halving latency vs the old 512 default.
+    Override via LLM_MAX_TOKENS env-var if needed.
+    """
     _load_dotenv_once()
     try:
-        return int(os.getenv("LLM_MAX_TOKENS", "512"))
+        return int(os.getenv("LLM_MAX_TOKENS", "200"))
     except ValueError:
-        return 512
+        return 200
